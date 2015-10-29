@@ -10,7 +10,7 @@ func TestNew(t *testing.T) {
 
 	u := New("Fausto", "1.2.3.4")
 	gotIp := u.Ip()
-	gotNick := u.Nickaname()
+	gotNick := u.Nickname()
 
 	if expectNick != gotNick || expectIp != gotIp {
 		t.Fatalf("Unnable to construct new user: expect %s and %s, got %s, %s", expectIp, expectNick, gotIp)
