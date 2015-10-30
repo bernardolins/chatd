@@ -1,7 +1,6 @@
 package user
 
 import (
-	"github.com/chuckpreslar/emission"
 	"testing"
 )
 
