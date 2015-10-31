@@ -22,20 +22,15 @@ func (c *Channel) Name() string {
 	return c.name
 }
 
-func (c *Channel) EventHandler() *emission.Emitter {
-	return c.eventHandler
-}
-
 func (c *Channel) AddUser(u *user.User) {
-	joinEvent := c.UserEvent(u.Nickname(), "join", c.name)
-
 	//New user notifies everybody  binded to this emitter he is on the channel
-	u.Notify(joinEvent, c.eventHandler)
+	u.Notify(c.UserEvent(u.Nickname(), "join", c.name), c.eventHandler)
 
-	//Also binds the new user to emitter
-	u.Bind("message", c.EventHandler())
+	//Also binds the new user to emitter, so it can listen to other users' events
+	u.Bind("message", c.eventHandler)
 }
 
+// Instantiates user events on this channel
 func (c *Channel) UserEvent(nick string, eventName string, value string) *event.E {
 	return event.New(nick, eventName, value, c.name)
 }
