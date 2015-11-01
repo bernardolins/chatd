@@ -17,7 +17,3 @@ func New(user string, action string, value string, channel string) *E {
 
 	return e
 }
-
-// Executes and instruction set by and event
-func Handle(event E) {
-}
