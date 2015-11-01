@@ -14,6 +14,7 @@ type Channel struct {
 func New(name string) *Channel {
 	c := new(Channel)
 	c.name = name
+	c.eventHandler = emission.NewEmitter()
 
 	return c
 }
@@ -27,6 +28,7 @@ func (c *Channel) AddUser(u *user.User) {
 	u.Notify(c.UserEvent(u.Nickname(), "join", c.name), c.eventHandler)
 
 	//Also binds the new user to emitter, so it can listen to other users' events
+	u.Bind("join", c.eventHandler)
 	u.Bind("message", c.eventHandler)
 }
 
