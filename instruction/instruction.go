@@ -5,10 +5,10 @@ import (
 )
 
 type Instruction interface {
-	Run(string)
+	Run(string, *event.E)
 }
 
 func Call(target string, event *event.E) {
 	instruction := InstructionByName(event.Action)
-	instruction.Run(target)
+	instruction.Run(target, event)
 }
