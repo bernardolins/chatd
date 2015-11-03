@@ -2,19 +2,18 @@ package user
 
 import (
 	"github.com/bernardolins/chatd/event"
-	"github.com/bernardolins/chatd/instruction"
 	"github.com/chuckpreslar/emission"
 )
 
 type User struct {
 	nickname string
 	ip       string
+	emitter  emission.Emitter
 }
 
-func New(nickname string, ip string) *User {
+func New(nickname string) *User {
 	u := new(User)
 	u.nickname = nickname
-	u.ip = ip
 
 	return u
 }
@@ -40,5 +39,5 @@ func (u *User) Notify(e *event.E, emitter *emission.Emitter) {
 }
 
 func (u *User) HandleEvent(e *event.E) {
-	instruction.Call(u.ip, e)
+	//send event to client side
 }
