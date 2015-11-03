@@ -25,7 +25,8 @@ func (c *Channel) Name() string {
 
 func (c *Channel) AddUser(u *user.User) {
 	//New user notifies everybody  binded to this emitter he is on the channel
-	u.Notify(c.UserEvent(u.Nickname(), "join", c.name), c.eventHandler)
+	e := c.UserEvent(u.Nickname(), "join", c.name)
+	u.Notify(e, c.eventHandler)
 
 	//Also binds the new user to emitter, so it can listen to other users' events
 	u.Bind("join", c.eventHandler)

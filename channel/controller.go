@@ -1,5 +1,7 @@
 package channel
 
+import ()
+
 type Controller struct {
 	channelList map[string]*Channel
 }
@@ -15,8 +17,9 @@ func (cc *Controller) NewChannel(name string) {
 	if _, contains := cc.channelList[name]; contains {
 		//error, room already exists
 	} else {
-		cc.channelList[name] = New(name)
 	}
+	c := New(name)
+	cc.channelList[name] = c
 }
 
 func (cc *Controller) SelectChannel(name string) *Channel {
