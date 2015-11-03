@@ -32,6 +32,10 @@ func (c *Channel) AddUser(u *user.User) {
 	u.Bind("message", c.eventHandler)
 }
 
+func (c *Channel) NewEventFrom(u *user.User, e *event.E) {
+	u.Notify(e, c.eventHandler)
+}
+
 // Instantiates user events on this channel
 func (c *Channel) UserEvent(nick string, eventName string, value string) *event.E {
 	return event.New(nick, eventName, value, c.name)
