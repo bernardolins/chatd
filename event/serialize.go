@@ -5,12 +5,12 @@ import (
 	"fmt"
 )
 
-func Serialize(b []byte) *E {
+func Serialize(b []byte) (*E, error) {
 	var event E
 	err := json.Unmarshal(b, &event)
 
 	if err != nil {
 		fmt.Println(err.Error())
 	}
-	return &event
+	return &event, err
 }

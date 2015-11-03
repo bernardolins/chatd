@@ -29,8 +29,8 @@ func New(ip string, port string) *Server {
 }
 
 func (server *Server) Up() {
-	fmt.Println("Starting server on %s:%d", server.ip, server.port)
-	ln, err := net.Listen("tcp", ":9090")
+	fmt.Println("Starting server on ", server.ip, ":", server.port)
+	ln, err := net.Listen("tcp", server.ip+":"+server.port)
 
 	if err != nil {
 		fmt.Println(err.Error())
@@ -46,47 +46,50 @@ func (server *Server) Stop() {
 
 func (server *Server) Accept() {
 	conn, err := server.listener.Accept()
+	fmt.Println("Accept")
 
 	if err != nil {
 		fmt.Println(err.Error())
 		os.Exit(1)
 	}
 
-	userBuff, _ := bufio.NewReader(conn).ReadString('}')
-	// Wait informations about new user
-	conn.Read([]byte(userBuff))
-	e := event.Serialize([]byte(userBuff))
-
-	// While client does not send the info the server should not create the user
-	var u *user.User
-	if e.Action == "createUser" {
-		//instruction.Controller.InstructionByName["createUser"].Run(e.User, e)
-		u = user.New(e.Value)
-		c := server.channelController.SelectChannel("general")
-		c.AddUser(u)
-	} else {
-		server.HandleConnection(conn, u)
-	}
-
+	go server.HandleConnection(conn)
 }
 
 // Handles User Connection
-func (server *Server) HandleConnection(conn net.Conn, user *user.User) {
-	server.HandleIncomingRequest(conn, user)
+func (server *Server) HandleConnection(conn net.Conn) {
+	for {
+		userBuff, _ := bufio.NewReader(conn).ReadString('\n')
+
+		fmt.Println(userBuff)
+		e, err := event.Serialize([]byte(userBuff))
+
+		if err != nil {
+			conn.Close()
+			return
+		}
+
+		conn.Write([]byte(userBuff))
+
+		var u *user.User
+		if e.Action == "createUser" {
+			u = user.New(e.Value)
+			c := server.channelController.SelectChannel("general")
+			c.AddUser(u)
+		} else {
+			channel := server.channelController.SelectChannel(e.Channel)
+			channel.NewEventFrom(u, e)
+		}
+
+		UserResponse(conn, u)
+	}
 }
 
-func (server *Server) HandleIncomingRequest(conn net.Conn, user *user.User) {
-	userBuff, err := bufio.NewReader(conn).ReadString('}')
-	fmt.Println(userBuff)
-	// Wait informations about new user
-
-	if err != nil {
-		fmt.Println(err.Error())
+func UserResponse(conn net.Conn, u *user.User) {
+	fmt.Println(u.Nickname(), len(u.EventList()))
+	for _, e := range u.EventList() {
+		de := event.Deserialize(e)
+		fmt.Println(string(de))
+		conn.Write(de)
 	}
-
-	e := event.Serialize([]byte(userBuff))
-	conn.Read([]byte(userBuff))
-	channel := server.channelController.SelectChannel(e.Channel)
-	fmt.Println(channel.Name())
-	//	channel.NewEventFrom(user, e)
 }
