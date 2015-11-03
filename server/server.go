@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/bernardolins/chatd/channel"
 	"github.com/bernardolins/chatd/event"
-	"github.com/bernardolins/chatd/user"
+	"github.com/bernardolins/chatd/peer"
 	"net"
 	"os"
 )
@@ -50,46 +50,67 @@ func (server *Server) Accept() {
 
 	if err != nil {
 		fmt.Println(err.Error())
-		os.Exit(1)
+		return
 	}
 
 	go server.HandleConnection(conn)
 }
 
-// Handles User Connection
 func (server *Server) HandleConnection(conn net.Conn) {
+	peer := new(peer.Peer)
+
 	for {
-		userBuff, _ := bufio.NewReader(conn).ReadString('\n')
-
-		fmt.Println(userBuff)
-		e, err := event.Serialize([]byte(userBuff))
-
+		e, err := receiveAction(conn)
 		if err != nil {
-			conn.Close()
-			return
+			fmt.Println(err.Error())
 		}
 
-		conn.Write([]byte(userBuff))
+		if e.Action == "connect" {
+			peer = server.initializePeer(e.User, conn)
+		}
 
-		var u *user.User
-		if e.Action == "createUser" {
-			u = user.New(e.Value)
-			c := server.channelController.SelectChannel("general")
-			c.AddUser(u)
-		} else {
+		if peer != nil {
+			handleConnectionError(conn, err)
 			channel := server.channelController.SelectChannel(e.Channel)
-			channel.NewEventFrom(u, e)
+			peer.NotifyChannel(e, channel.EventHandler())
 		}
-
-		UserResponse(conn, u)
 	}
 }
 
-func UserResponse(conn net.Conn, u *user.User) {
-	fmt.Println(u.Nickname(), len(u.EventList()))
-	for _, e := range u.EventList() {
-		de := event.Deserialize(e)
-		fmt.Println(string(de))
-		conn.Write(de)
+func (server *Server) initializePeer(identification string, conn net.Conn) *peer.Peer {
+	p := peer.New(identification, conn)
+	channel := server.channelController.SelectChannel("general")
+	channel.RegisterPeer(p)
+	return p
+}
+
+func receiveAction(conn net.Conn) (*event.E, error) {
+	userBuff, err := bufio.NewReader(conn).ReadString('\n')
+	fmt.Println(userBuff)
+
+	if err != nil {
+		return nil, err
+	}
+
+	e, serializeError := event.Serialize([]byte(userBuff))
+
+	if serializeError != nil {
+		fmt.Println(serializeError.Error())
+		return nil, serializeError
+	}
+
+	_, err = conn.Write([]byte(userBuff))
+
+	if err != nil {
+		fmt.Println(err.Error())
+		return nil, err
+	}
+
+	return e, err
+}
+
+func handleConnectionError(conn net.Conn, err error) {
+	if err != nil {
+		conn.Close()
 	}
 }

@@ -2,7 +2,7 @@ package channel
 
 import (
 	"github.com/bernardolins/chatd/event"
-	"github.com/bernardolins/chatd/user"
+	"github.com/bernardolins/chatd/peer"
 	"github.com/chuckpreslar/emission"
 )
 
@@ -23,21 +23,24 @@ func (c *Channel) Name() string {
 	return c.name
 }
 
-func (c *Channel) AddUser(u *user.User) {
-	//New user notifies everybody  binded to this emitter he is on the channel
-	e := c.UserEvent(u.Nickname(), "join", c.name)
-	u.Notify(e, c.eventHandler)
-
-	//Also binds the new user to emitter, so it can listen to other users' events
-	u.Bind("join", c.eventHandler)
-	u.Bind("message", c.eventHandler)
+func (c *Channel) EventHandler() *emission.Emitter {
+	return c.eventHandler
 }
 
-func (c *Channel) NewEventFrom(u *user.User, e *event.E) {
-	u.Notify(e, c.eventHandler)
+func (c *Channel) RegisterPeer(p *peer.Peer) {
+	e := event.New(p.Identification(), "join", c.name, c.name)
+	p.NotifyChannel(e, c.eventHandler)
+
+	//Also binds the new peer to emitter, so it can listen to other peers' events
+	p.BindChannel("join", c.eventHandler)
+	p.BindChannel("message", c.eventHandler)
 }
 
-// Instantiates user events on this channel
-func (c *Channel) UserEvent(nick string, eventName string, value string) *event.E {
-	return event.New(nick, eventName, value, c.name)
-}
+//func (c *Channel) NewEventFrom(u *peer.Peer, e *event.E) {
+//	u.Notify(e, c.eventHandler)
+//}
+
+// Instantiates peer events on this channel
+//func (c *Channel) PeerEvent(nick string, eventName string, value string) *event.E {
+//	return event.New(nick, eventName, value, c.name)
+//}
